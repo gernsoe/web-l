@@ -1,4 +1,3 @@
-import {execute} from '../services/vm.js';
 import Parser from 'tree-sitter';
 import L from 'tree-sitter-l';
 
@@ -16,7 +15,7 @@ export const createPost = async (req, res) => {
             "$j":0
         }
 
-        function get_reader_type(reader){
+        async function get_reader_type(reader){
 
             if(reader.childCount == 0){
                 return '_';
@@ -29,7 +28,7 @@ export const createPost = async (req, res) => {
 
         async function handle_reader(reader){
             var reader_content = reader.text;
-            var reader_type = get_reader_type(reader);
+            var reader_type = await get_reader_type(reader);
             switch(reader_type){
                 case 'register':
                     if (reader_content in registers){
@@ -50,7 +49,7 @@ export const createPost = async (req, res) => {
             }
         }
 
-        function handle_binary(v_left,oper,v_right){
+        async function handle_binary(v_left,oper,v_right){
             switch(oper.text){
                 case '+':
                     return v_left + v_right;
@@ -83,11 +82,11 @@ export const createPost = async (req, res) => {
             var numOfChildren = expression.childCount;
             switch(numOfChildren){
                 case 1: // reader
-                    return handle_reader(expression.child(0));
+                    return await handle_reader(expression.child(0));
                 case 2: // oper, reader
-                    return handle_unary(expression.child(0),handle_reader(expression.child(1)));
+                    return await handle_unary(expression.child(0),await handle_reader(expression.child(1)));
                 case 3: // reader, oper, reader
-                    return handle_binary(handle_reader(expression.child(0)), expression.child(1), handle_reader(expression.child(2)))
+                    return await handle_binary(await handle_reader(expression.child(0)), expression.child(1), await handle_reader(expression.child(2)))
             }
         }
 
@@ -98,7 +97,7 @@ export const createPost = async (req, res) => {
                 case 'memory':
                     break;
                 case 'register':
-                    registers[writer.text.toString()] = handle_expression(expression);
+                    registers[writer.text.toString()] = await handle_expression(expression);
             }
         }
 
@@ -108,13 +107,13 @@ export const createPost = async (req, res) => {
 
         async function handle_statement(statement){
             if(statement.childCount == 1){ //Syscall is the only statement which has only 1 child node
-                handle_syscall(statement.child(0));
+                await handle_syscall(statement.child(0));
             }else{
                 if(statement.child(1).type.toString() == ':='){
-                    handle_writer(statement);
+                    await handle_writer(statement);
                 }else if(statement.child(1).type.toString() == '?='){
                     if(registers['$?']){ 
-                        handle_writer(statement);
+                        await handle_writer(statement);
                     }
                 }
             }
@@ -150,8 +149,7 @@ export const createPost = async (req, res) => {
             const statements = tree.rootNode.childCount > 1 ? tree.rootNode.child(1) : tree.rootNode.child(0);
 
             await execute_statements(statements);
-
-            return JSON.stringify(registers, undefined, 2);
+            return JSON.stringify(await registers, 2);
         }
         var result = await execute(req.body.code);
         console.log("Resolved request and updated registers: ", result);
