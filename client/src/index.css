@@ -11,3 +11,17 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+#wrapper {
+  width: 100%;
+  border: 1px solid black;
+  overflow: hidden; /* add this to contain floated children */
+}
+#editor{
+  width: 50%;
+  float:left; /* add this */
+}
+#pretty-print {
+  width: 50%;
+  float: left; /* add this */
+}

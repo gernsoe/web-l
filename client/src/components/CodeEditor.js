@@ -9,6 +9,10 @@ function App() {
     setValue(value);
   }, []);
 
+  const checkOptions = React.useCallback((editor, data, value) => {
+      console.log(editor.options);
+  }, []);
+
   const handleButtonClick = async () => {
     console.log('value:', value);
     const post = { code: value };
@@ -19,21 +23,35 @@ function App() {
     } catch (error) {
       console.error(error);
     }
-  };
+  }; 
 
   return (
     <>
-      <CodeMirror
-        value={value}
-        height="200px"
-        onChange={onChange}
-      />
+      <div id="wrapper">
+        <div id="editor">
+          <CodeMirror
+            value={value}
+            height="200px"
+            onChange={onChange}
+          />
+        </div>
+        <div id="pretty-print">
+          <CodeMirror
+            value={value}
+            height="200px"
+            options={{
+              readOnly: "nocursor"
+            }}
+            onChange={checkOptions}
+          />
+        </div>
+      </div>
       <button onClick={handleButtonClick}>
         Run Code!
       </button>
       <p>Result:</p>
       <pre>{result}</pre>
-    </>
+  </>
   );
 }
 
