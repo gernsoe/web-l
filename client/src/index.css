@@ -19,9 +19,9 @@ code {
 }
 #editor{
   width: 50%;
-  float:left; /* add this */
+  float:left; 
 }
 #pretty-print {
   width: 50%;
-  float: left; /* add this */
+  float: left; 
 }
