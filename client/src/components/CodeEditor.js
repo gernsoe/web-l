@@ -103,7 +103,9 @@ function App() {
       </button>
       <p>Debug Mode: {debug}</p>
       <p>Result:</p>
-      <pre>{result}</pre>
+      <pre>
+      {result}
+      </pre>
   </>
   );
 }

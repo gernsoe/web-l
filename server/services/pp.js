@@ -5,14 +5,23 @@ parser.setLanguage(L);
 
 export async function p_source(sourceCode){
     const tree = parser.parse(sourceCode);
-    const declarations = tree.rootNode.childCount > 1 ? tree.rootNode.child(0) : [];
-    const statements = tree.rootNode.childCount > 1 ? tree.rootNode.child(1) : tree.rootNode.child(0);
+    
+    if(tree.rootNode.toString().includes("ERROR")){
+        return "Syntax Error";
+    }
 
-    return await p_statements(statements);
-}
+    let declarations;
+    let statements;
 
-function p_declarations(declarations){
+    if(tree.rootNode.childCount == 2){
+        declarations = tree.rootNode.child(0);
+        statements = tree.rootNode.child(1);           
+    }else if(tree.rootNode.child(0).type == 'statements'){
+        declarations = [];
+        statements = tree.rootNode.child(0);
+    }
 
+    return await p_declarations(declarations) + await p_statements(statements);
 }
 
 async function p_statements(statements){
@@ -36,6 +45,38 @@ async function p_statements(statements){
         }
     }
     return p_statements;
+}
+
+async function p_declarations(declarations){
+    let p_declarations = "";
+    if(declarations == []){
+        return p_declarations;
+    }
+    for(let c_i = 0; c_i < declarations.childCount; c_i++){
+        let declaration = declarations.child(c_i);
+        switch(declaration.type){
+            case 'declaration':
+                p_declarations += await p_declaration(declaration);
+                break;
+            case ';':
+                p_declarations += declaration.text;
+                break;
+            case '\n':
+                p_declarations += declaration.text;
+                break;
+        }
+    }
+    return p_declarations;     
+}
+
+async function p_declaration(declaration){
+    let type = declaration.child(0).text;
+    let dec = declaration.child(1).text.split(' ');
+    if(type == 'const'){
+        return ".const "+dec[0]+" "+dec[1];
+    }else if(type == 'data'){
+        return ".data "+dec[0]+" "+dec[1];
+    }
 }
 
 async function p_statement(statement){

@@ -12,7 +12,12 @@ var registers = {
     "$j":0
 };
 
+var labels = {}
+var cs = {}
+var data = {}
 var instructions = {};
+
+var state = {};
 
 async function init_registers() {
     for (let key in registers) {
@@ -20,12 +25,8 @@ async function init_registers() {
     }
 }
 
-async function clear_instructions()  {
-    instructions = {};
-}
-
 async function get_reader_type(reader){
-    if(reader.child(0).type == 'assign'){
+    if(reader.child(0).type == 'assign' || reader.child(0).type == 'datavar'){
         return reader.child(0).child(0).type;
     } else {
         return reader.child(0).type;
@@ -45,20 +46,24 @@ async function handle_reader(reader){
         case 'memory':
             break;//not done
         case 'constant':
-            if (reader_content in constants){
-                return constants[reader_content];
+            if (reader_content in cs){
+                return parseInt(cs[reader_content]);
             }else{
                 throw new Error("Constant ",reader_content," not found")
             }
         case 'data':
-            break;//not done
+            if (reader_content in data){
+                return data[reader_content];
+            }else{
+                throw new Error("Data ",reader_content," not found")
+            }
         case 'label':
             if (reader_content in labels){
                 return labels[reader_content];
             }else{
                 throw new Error("Label ",reader_content," not found")
             }
-        case 'number'://does not work with strings atm.
+        case 'number':
             return parseInt(reader_content);
     }
 }
@@ -165,11 +170,8 @@ async function read_statements(statements){
 async function handle_declaration(declaration){
     let type = declaration.child(0).text;
     let dec = declaration.child(1).text.split(' ');
-    // console.log(type)
-    // console.log(dec[0])
-    // console.log(dec[1])
     if(type == 'const'){
-        constants[dec[0]] = dec[1];
+        cs[dec[0]] = dec[1];
     }else if(type == 'data'){
         data[dec[0]] = dec[1];
     }
@@ -212,28 +214,42 @@ export async function execute_all(code){
             break;
         }
     }
-    return JSON.stringify(await registers, 2);
+    await setState();
+    return JSON.stringify(await state, 2);
 }
 
 export async function execute_step(){
     if(registers['$!'] >= instructions.length){
         console.log("EOF");
-        return JSON.stringify(await registers, 2);
+        return JSON.stringify(await state, 2);
     }
     await handle_statement(instructions[registers['$!']])
     registers['$!']++;
     console.log("registers: ",JSON.stringify(await registers, 2)); 
-    return JSON.stringify(await registers, 2);
+    await setState();
+    return JSON.stringify(await state, 2);
 }
 
 export async function enterDebugMode(code) {
     await init(code);
-    return JSON.stringify(await registers, 2);
+    await setState();
+    return JSON.stringify(await state, 2);
+}
+
+async function setState() {
+    state['registers'] = registers;
+    state['constants'] = cs;
+    state['data'] = data;
+    state['labels'] = labels;
 }
 
 async function init(code) {
     await init_registers();
     const tree = parser.parse(code);
-    await clear_instructions();
+    instructions = {};
+    cs = {};
+    data = {};
+    labels = {};
+    state = {};
     instructions = await read_program(tree);
 }

@@ -33,8 +33,9 @@ export const executeStep = async (req, res) => {
             console.log(debug);
             console.log("Executed a single step and updated registers: ", result);
             res.status(200).json(result);
+        } else {
+            res.status(200).json("");
         }
-        res.status(200);
     } catch (error) {
         res.status(400).json({ success: false, error });
     }
