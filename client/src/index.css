@@ -25,3 +25,7 @@ code {
   width: 50%;
   float: left; 
 }
+
+.current-line {
+  background-color: orange;
+}

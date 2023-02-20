@@ -1,20 +1,14 @@
 import React from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import * as api from '../api/index.js';
-import { createTheme } from '@uiw/codemirror-themes';
+import { classname } from '@uiw/codemirror-extensions-classname';
 
 function App() {
   const [value, setValue] = React.useState('');
   const [pretty, setPretty] = React.useState('');
   const [result, setResult] = React.useState('');
   const [debug, setDebug] = React.useState('false');
-
-  const myTheme = createTheme({
-    theme: 'light',
-    settings: {
-      foreground: '#FF0000',
-    },
-  })
+  const [pc, setPC] = React.useState(0);
 
   const onChange = React.useCallback(async (value, viewUpdate) => {
     setValue(value);
@@ -68,11 +62,20 @@ function App() {
     try {
       const response = await api.executeStep(code);
       setResult(response.data);
+      setPC(JSON.parse(response.data)["registers"]["$!"]);
       console.log(response);
     } catch (error) {
       console.error(error);
     }
   }; 
+
+  const classnameExt = classname({
+    add: (lineNumber) => {
+      if (lineNumber === parseInt(pc) + 1) {
+        return 'current-line';
+      }
+    },
+  });
 
   return (
     <>
@@ -82,6 +85,7 @@ function App() {
             value={value}
             height="200px"
             onChange={onChange}
+            extensions={[classnameExt]}
           />
         </div>
         <div id="pretty-print">
